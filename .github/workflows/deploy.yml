@@ -1,0 +1,58 @@
+name: Build and Deploy Laravel + React to Shared Hosting
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # -------------------------
+      # Install Laravel Backend
+      # -------------------------
+      - name: Install PHP & Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, pdo, openssl, tokenizer, xml
+          tools: composer
+
+      - name: Install Laravel Dependencies
+        working-directory: backend
+        run: |
+          composer create-project laravel/laravel . --no-dev
+          composer install --no-dev --optimize-autoloader
+          php artisan config:cache
+          php artisan route:cache
+
+      # -------------------------
+      # Build React Frontend
+      # -------------------------
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install React Dependencies
+        working-directory: frontend
+        run: |
+          npm install
+          npm run build
+
+      # -------------------------
+      # Deploy to Shared Hosting
+      # -------------------------
+      - name: FTP Deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          local-dir: ./deploy
+          server-dir: /public_html/laravel
