@@ -1,0 +1,5 @@
+{
+  "name": "placeholder/laravel",
+  "description": "Laravel will be installed via GitHub Actions",
+  "require": {}
+}
